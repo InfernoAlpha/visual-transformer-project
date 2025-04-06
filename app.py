@@ -1,12 +1,11 @@
 from pdp import Vgg16
-from flask import Flask, jsonify, request, render_template
+from flask import Flask, request, render_template
 
 from torchvision import transforms
 
 from PIL import Image
 
 import torch
-import torch.quantization
 
 print(torch.__version__)
 transform = transforms.Compose([
