@@ -1,4 +1,5 @@
 from vtp import vision_transformer,config
+from pdp import Vgg16
 from flask import Flask, jsonify, request, render_template
 
 from torchvision import transforms
@@ -15,9 +16,9 @@ transform = transforms.Compose([
     transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 ])
 
-model = vision_transformer(config)
+model = Vgg16(3,38)
 
-model.load_state_dict(torch.load("vit_model_MP1.pth",weights_only=True,map_location=torch.device('cpu')))
+model.load_state_dict(torch.load("pruned_MP4.pth",weights_only=True,map_location=torch.device('cpu')))
 
 model.eval()
 
