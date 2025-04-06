@@ -1,0 +1,2 @@
+*.pth filter=lfs diff=lfs merge=lfs -text
+pruned_MP4.pth filter=lfs diff=lfs merge=lfs -text
