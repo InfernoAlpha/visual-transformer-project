@@ -1,4 +1,3 @@
-from vtp import vision_transformer,config
 from pdp import Vgg16
 from flask import Flask, jsonify, request, render_template
 
