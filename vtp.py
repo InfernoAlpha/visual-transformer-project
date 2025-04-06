@@ -4,33 +4,8 @@ from torch.nn import functional as f
 from dataclasses import dataclass
 from torchvision import transforms,datasets
 from torch.utils.data import DataLoader
-from pathlib import Path
-import math
 from tqdm import tqdm
 import torch.optim as optim
-
-transform1 = transforms.Compose([
-    transforms.Resize((224,224)), 
-    transforms.TrivialAugmentWide(num_magnitude_bins=15),
-    transforms.ToTensor(),
-    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-])
-transform2 = transforms.Compose([
-    transforms.Resize((224,224)),
-    transforms.ToTensor(),
-    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-])
-
-train_data_path = Path(r"C:\Users\chara\Desktop\Desktop\vs code\New Plant Diseases Dataset(Augmented)\New Plant Diseases Dataset(Augmented)\train/")
-test_data_path = Path(r"C:\Users\chara\Desktop\Desktop\vs code\New Plant Diseases Dataset(Augmented)\New Plant Diseases Dataset(Augmented)\valid/")
-
-train_data = datasets.ImageFolder(root=train_data_path,
-                                  transform=transform1,
-                                  target_transform=None)
-test_data = datasets.ImageFolder(root=test_data_path,transform=transform2)
-
-train_dataloder = DataLoader(dataset=train_data,batch_size=4,num_workers=0,shuffle=True)
-test_dataloder = DataLoader(dataset=test_data,batch_size=4,num_workers=0,shuffle=False)
 
 @dataclass
 class config:
