@@ -1,24 +1,24 @@
-from vtp import vision_transformer,config
+from pdp import Vgg16
 from flask import Flask, jsonify, request, render_template
-
 from torchvision import transforms
-
+import torch.nn.utils.prune as prune
 from PIL import Image
 
 import torch
-import torch.quantization
 
-print(torch.__version__)
 transform = transforms.Compose([
-    transforms.Resize((224,224)),
+    transforms.Resize((128,128)),
     transforms.ToTensor(),
     transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 ])
 
-model = vision_transformer(config)
+model = Vgg16(3,38)
+model.load_state_dict(torch.load(r"model_MP_aws_2.pth",weights_only=True,map_location=torch.device('cpu')))
 
-model.load_state_dict(torch.load("vit_model_MP1.pth",weights_only=True,map_location=torch.device('cpu')))
-
+model = torch.quantization.quantize_dynamic(model, {torch.nn.Linear}, dtype=torch.qint8)
+for name, module in model.named_modules():
+    if isinstance(module, (torch.nn.Linear, torch.nn.Conv2d)):
+        prune.l1_unstructured(module, name="weight", amount=0.3) 
 model.eval()
 
 app = Flask(__name__)
@@ -28,14 +28,15 @@ dic = ['Apple___Apple_scab', 'Apple___Black_rot', 'Apple___Cedar_apple_rust', 'A
 def predict_label(img_path):
 	i = Image.open(img_path)
 	i = transform(i)
-	p = model(i.unsqueeze(dim=0))
-	_,pred = p.max(1)
-	return dic[pred]
+	with torch.no_grad(): 
+		p = model(i.unsqueeze(dim=0))
+		prob,pred = p.max(1)
+	return dic[pred],prob
 
 # routes
 @app.route("/", methods=['GET', 'POST'])
 def main():
-	return render_template("index.html")
+	return render_template("index2.html")
 
 @app.route("/about")
 def about_page():
@@ -50,10 +51,10 @@ def get_output():
 		img_path = "static/"+img.filename	
 		img.save(img_path)
 
-		p = predict_label(img_path)
+		p,prob = predict_label(img_path)
 
-	return render_template("index.html", prediction = p, img_path = img_path)
+		return render_template("index2.html", prediction = p.replace("_"," "), img_path = img_path,accuracy = round(float(prob)*100,2))
 
 if __name__ =='__main__':
-	#app.debug = True
-	app.run(debug = True)
+	app.debug = True
+	app.run(host = '0.0.0.0',port=8080)

@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Plant Disease Predictor</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      background: linear-gradient(to right, #c8e6c9, #b2dfdb); 
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .container {
+      background-color: rgba(255, 255, 255, 0.96);
+      padding: 40px;
+      border-radius: 15px;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+      max-width: 800px;
+      width: 100%;
+    }
+
+    .jumbotron {
+      background: linear-gradient(45deg, #4caf50, #66bb6a);
+      color: white;
+      border-radius: 12px;
+      text-align: center;
+      padding: 30px 20px;
+      margin-bottom: 30px;
+    }
+
+    .drop-zone {
+      border: 3px dashed #81c784;
+      border-radius: 10px;
+      padding: 40px;
+      text-align: center;
+      cursor: pointer;
+      background-color: #f9fff9;
+      color: #555;
+      transition: all 0.3s;
+    }
+
+    .drop-zone.dragover {
+      background-color: #e8f5e9;
+      border-color: #388e3c;
+      color: #2e7d32;
+    }
+
+    .drop-zone input {
+      display: none;
+    }
+
+    .btn-success {
+      background-color: #388e3c;
+      border: none;
+      padding: 12px 30px;
+      font-size: 18px;
+      border-radius: 8px;
+      margin-top: 20px;
+      transition: background 0.3s ease-in-out;
+    }
+
+    .btn-success:hover {
+      background-color: #2e7d32;
+    }
+
+    .prediction-result {
+      margin-top: 40px;
+      padding: 30px;
+      background-color: #f1f8e9;
+      border-left: 6px solid #66bb6a;
+      border-radius: 10px;
+      text-align: center;
+      animation: fadeIn 0.8s ease-in-out;
+    }
+
+    .prediction-result img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 12px;
+      margin-bottom: 20px;
+      border: 4px solid #81c784;
+    }
+
+    .prediction-result h2 {
+      font-size: 24px;
+      font-weight: bold;
+      color: #2e7d32;
+    }
+
+    .prediction-result i {
+      font-size: 20px;
+      color: #388e3c;
+    }
+
+    /* Smooth progress bar width transition */
+    .progress-bar {
+      transition: width 2s ease;
+      font-weight: bold;
+      line-height: 25px;
+      color: #fff;
+    }
+
+    /* Removed animation to prevent width reset */
+    /* .progress-bar-animated {
+      width: 0;
+      animation: fillProgressBar 2s ease forwards;
+      animation-delay: 0.3s;
+    } */
+
+    footer {
+      text-align: center;
+      margin-top: 30px;
+      font-size: 14px;
+      color: #555;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 576px) {
+      .jumbotron h1 {
+        font-size: 24px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <div class="jumbotron">
+    <h1>🌿 Plant Disease Predictor</h1>
+    <p>Upload a plant image to detect potential diseases using AI</p>
+  </div>
+
+  <form class="form-horizontal" action="/submit" method="post" enctype="multipart/form-data" id="upload-form">
+    <div class="form-group">
+      <div class="drop-zone" id="drop-zone">
+        <p><strong>Drag & Drop</strong> your image here or click to select</p>
+        <input type="file" name="my_image" id="file-input" required>
+      </div>
+    </div>
+
+    <div class="form-group text-center">
+      <button type="submit" class="btn btn-success"> Predict Disease</button>
+    </div>
+  </form>
+
+  {% if prediction %}
+  <div class="prediction-result">
+    <img src="{{ img_path }}" alt="Plant Image">
+    <h2> Predicted Disease:</h2>
+    <i>{{ prediction }}</i>
+
+    <div class="progress" style="height: 25px; border-radius: 12px; margin-top: 20px;">
+      <div
+        id="accuracy-bar"
+        class="progress-bar progress-bar-success progress-bar-striped active"
+        role="progressbar"
+        aria-valuenow="{{ accuracy }}"
+        aria-valuemin="0"
+        aria-valuemax="100"
+        style="width: 0%;"
+      >
+        <!-- Optional text inside -->
+      </div>
+    </div>
+
+    <div style="text-align: center; color: #388e3c; font-weight: bold; margin-top: 10px;">
+      Accuracy: {{ accuracy }}%
+    </div>
+  </div>
+  {% endif %}
+
+
+</div>
+
+<!-- Drag-and-Drop JS -->
+<script>
+  const dropZone = document.getElementById('drop-zone');
+  const fileInput = document.getElementById('file-input');
+
+  dropZone.addEventListener('click', () => fileInput.click());
+
+  fileInput.addEventListener('change', () => {
+    if (fileInput.files.length) {
+      dropZone.classList.add('dragover');
+      dropZone.querySelector('p').textContent = fileInput.files[0].name;
+    }
+  });
+
+  dropZone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    dropZone.classList.add('dragover');
+  });
+
+  dropZone.addEventListener('dragleave', () => {
+    dropZone.classList.remove('dragover');
+  });
+
+  dropZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropZone.classList.remove('dragover');
+
+    if (e.dataTransfer.files.length) {
+      fileInput.files = e.dataTransfer.files;
+      dropZone.querySelector('p').textContent = e.dataTransfer.files[0].name;
+    }
+  });
+
+  window.addEventListener('DOMContentLoaded', () => {
+    const progressBar = document.getElementById('accuracy-bar');
+    if (progressBar) {
+      // Get accuracy from aria-valuenow attribute (string to number)
+      const accuracy = parseInt(progressBar.getAttribute('aria-valuenow')) || 0;
+      // Trigger width change to animate fill
+      progressBar.style.width = accuracy + '%';
+    }
+  })
+</script>
+
+</body>
+</html>
